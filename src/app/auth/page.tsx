@@ -1,17 +1,27 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+
+const COOLDOWN_SECONDS = 60
 
 export default function AuthPage() {
   const [email, setEmail] = useState("")
   const [sent, setSent] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [cooldown, setCooldown] = useState(0)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const timer = setInterval(() => setCooldown((c) => c - 1), 1000)
+    return () => clearInterval(timer)
+  }, [cooldown])
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
+    if (cooldown > 0) return
     setLoading(true)
     setError("")
 
@@ -25,11 +35,18 @@ export default function AuthPage() {
 
     if (res.ok) {
       setSent(true)
+      setCooldown(COOLDOWN_SECONDS)
     } else {
       const data = await res.json()
-      setError(data.error || "Something went wrong")
+      const msg = data.error || "Something went wrong"
+      if (msg.toLowerCase().includes("rate") || msg.toLowerCase().includes("limited")) {
+        setError("Too many requests. Please wait a minute and try again.")
+        setCooldown(COOLDOWN_SECONDS)
+      } else {
+        setError(msg)
+      }
     }
-  }
+  }, [email, cooldown])
 
   return (
     <div className="flex flex-1 items-center justify-center px-4 sm:px-6">
@@ -45,6 +62,12 @@ export default function AuthPage() {
             <p className="text-sm text-muted mt-1">
               We sent a magic link to <strong>{email}</strong>
             </p>
+            <button
+              onClick={() => setSent(false)}
+              className="mt-4 text-sm text-accent hover:underline"
+            >
+              Send again
+            </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -58,8 +81,8 @@ export default function AuthPage() {
               required
               error={error}
             />
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Sending..." : "Send magic link"}
+            <Button type="submit" className="w-full" disabled={loading || cooldown > 0}>
+              {loading ? "Sending..." : cooldown > 0 ? `Wait ${cooldown}s` : "Send magic link"}
             </Button>
           </form>
         )}
