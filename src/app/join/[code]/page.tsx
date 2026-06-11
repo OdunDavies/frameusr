@@ -1,16 +1,20 @@
-import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/server"
 import { GuestView } from "./guest-view"
 import type { Event, Photo } from "@/lib/types"
 
 export default async function JoinPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params
-  const supabase = await createClient()
+  const supabase = createServiceClient()
 
-  const { data: event } = await supabase
+  const { data: event, error } = await supabase
     .from("events")
     .select("*")
     .eq("join_code", code)
     .single<Event>()
+
+  if (error) {
+    console.error("join lookup error:", error.message, "code:", code)
+  }
 
   if (!event) {
     return (

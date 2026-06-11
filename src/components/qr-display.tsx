@@ -10,16 +10,17 @@ interface QRDisplayProps {
 
 export function QRDisplay({ url }: QRDisplayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    if (canvasRef.current) {
-      QRCode.toCanvas(canvasRef.current, url, {
-        width: 200,
-        margin: 2,
-        color: { dark: "#2C2C2C", light: "#FAF8F5" },
-      })
-    }
+    if (!canvasRef.current || !containerRef.current) return
+    const size = Math.min(containerRef.current.clientWidth - 48, 200)
+    QRCode.toCanvas(canvasRef.current, url, {
+      width: size,
+      margin: 2,
+      color: { dark: "#2C2C2C", light: "#FAF8F5" },
+    })
   }, [url])
 
   const copyLink = async () => {
@@ -29,9 +30,9 @@ export function QRDisplay({ url }: QRDisplayProps) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-4 p-6 bg-white rounded-xl border border-border">
-      <canvas ref={canvasRef} className="rounded-lg" />
-      <Button variant="secondary" size="sm" onClick={copyLink}>
+    <div ref={containerRef} className="flex flex-col items-center gap-4 p-4 sm:p-6 bg-white rounded-xl border border-border">
+      <canvas ref={canvasRef} className="rounded-lg max-w-full" />
+      <Button variant="secondary" size="sm" className="w-full sm:w-auto" onClick={copyLink}>
         {copied ? "Copied!" : "Copy share link"}
       </Button>
     </div>

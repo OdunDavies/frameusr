@@ -1,6 +1,8 @@
+export type FilterStyle = "warm" | "bw" | "polaroid"
+
 export function applyFilmFilter(
   imageData: ImageData,
-  style: "warm" | "bw" = "warm"
+  style: FilterStyle = "polaroid"
 ): ImageData {
   const data = imageData.data
 
@@ -17,6 +19,14 @@ export function applyFilmFilter(
       r = Math.min(255, Math.max(0, r + grain))
       g = Math.min(255, Math.max(0, g + grain))
       b = Math.min(255, Math.max(0, b + grain))
+    } else if (style === "polaroid") {
+      const grain = (Math.random() - 0.5) * 4
+      r = Math.min(255, Math.max(0, r - 6 + grain))
+      g = Math.min(255, Math.max(0, g - 3 + grain))
+      b = Math.min(255, Math.max(0, b + 5 + grain))
+      r = Math.min(255, Math.max(25, r))
+      g = Math.min(255, Math.max(25, g))
+      b = Math.min(255, Math.max(25, b))
     } else {
       const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b)
       r = gray
@@ -38,7 +48,7 @@ export function applyFilmFilter(
 
 export function processImageWithFilter(
   file: File,
-  style: "warm" | "bw" = "warm"
+  style: FilterStyle = "polaroid"
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image()
